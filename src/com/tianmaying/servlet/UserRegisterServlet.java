@@ -5,6 +5,7 @@ import com.tianmaying.model.BlogAppException;
 import com.tianmaying.model.BlogRepository;
 import com.tianmaying.model.User;
 import com.tianmaying.model.UserRepository;
+import com.tianmaying.service.UserService;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -19,7 +20,8 @@ import java.util.regex.Pattern;
 @WebServlet("/register")
 public class UserRegisterServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-
+    private UserService userService = new UserService();
+    
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/jsp/register.jsp");
         dispatcher.forward(request, response);
@@ -40,21 +42,15 @@ public class UserRegisterServlet extends HttpServlet {
             return;
         }
 
-        User user = new User(email, username, password);
+        //User user = new User(email, username, password);
         try {
+        	User user = userService.register(new User(email, username, password));
             UserRepository.add(user);
-         // TODO: your code here 为该用户创建一篇默认博客
-            String title = "这是你在天码营的第一篇博客";
-            String content = "天码营秉承让技术学习更加高效和便捷的使命，致力于打造新一代的技术学习服务平台，提供创新并且专业的内容、工具与服务，帮助学习者与从业者实现个人价值";
-            Blog blog = new Blog(title, content);
-            blog.setAuthor(user);
-            BlogRepository.add(blog);
+            request.getSession().setAttribute("currentUser", user);
+            response.sendRedirect(request.getContextPath() + "/blogs?user=" +user.getId());
         } catch (BlogAppException e) {
             e.printStackTrace();
         }
-        request.getSession().setAttribute("currentUser", user);
-        response.sendRedirect(request.getContextPath() + "/blogs?user=" +user.getId());
-
     }
 
     public static boolean isEmail(String email) {

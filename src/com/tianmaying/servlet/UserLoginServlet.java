@@ -1,20 +1,21 @@
 package com.tianmaying.servlet;
 
 import com.tianmaying.model.User;
-import com.tianmaying.model.UserRepository;
+import com.tianmaying.service.UserService;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+
 @WebServlet("/login")
 public class UserLoginServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-
+    private UserService userService = new UserService();
+    
     private void dispatchWithMessage(HttpServletRequest request,
                                      HttpServletResponse response,
                                      String message) throws ServletException, IOException {
@@ -39,24 +40,18 @@ public class UserLoginServlet extends HttpServlet {
             return;
         }
 
-        User user = UserRepository.getByUsername(username);
-        if (user == null) {
+        if (!userService.exist(username)) {
             dispatchWithMessage(request, response, "该用户不存在");
-            System.out.println("用户不存在");
             return;
         }
-
-        if (password == null || !password.equals(user.getPassword())) {
+        
+        User user = userService.login(username, password);
+        
+        if (user == null) {
             dispatchWithMessage(request, response, "密码不正确");
             return;
         }
-
-        Cookie c = new Cookie("user", user.getUsername());
-        response.addCookie(c);
-        
-        //保存用户信息,方便页面显示。
         request.getSession().setAttribute("currentUser", user);
-        //response.sendRedirect(request.getContextPath() + "/blogs");
         response.sendRedirect(request.getContextPath() + "/blogs?user=" + user.getId());
     }
 
